@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>夜玫瑰 · 星空画展</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a2a 0%, #1a0639 100%);
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+      position: relative;
+      perspective: 1000px;
+    }
+
+    /* 页面容器 */
+    .page-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 星空画布 */
+    #stars-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.7;
+    }
+
+    /* 页面内容 */
+    .page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      z-index: 2;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1.2s ease, transform 1.2s ease;
+      pointer-events: none;
+    }
+
+    .page.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    /* 首页样式 */
+    .welcome-page h1 {
+      font-size: 1.8rem;
+      font-weight: 300;
+      margin-bottom: 2rem;
+      text-shadow: 0 0 15px rgba(255, 215, 255, 0.5);
+      line-height: 1.4;
+    }
+
+    .typing-text {
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 90%;
+      max-width: 600px;
+    }
+
+    /* 音乐按钮 */
+    .music-btn {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 1.1rem;
+      padding: 12px 28px;
+      border-radius: 50px;
+      margin-top: 40px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 300;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .music-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #ff7eb3, #ff758c, #ff7eb3);
+      z-index: -1;
+      opacity: 0.3;
+      transition: opacity 0.3s ease;
+    }
+
+    .music-btn:hover::after {
+      opacity: 0.5;
+    }
+
+    /* 画作展示页 */
+    .art-page {
+      background: rgba(10, 5, 25, 0.6);
+    }
+
+    .art-container {
+      position: relative;
+      /* width: 280px; */
+      /* width: 370px; */
+      /* height: 380px; */
+      height: 505px;
+      margin: 20px auto 30px;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .art-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.9) contrast(1.1) saturate(1.2);
+      transition: transform 0.8s ease, filter 0.8s ease;
+    }
+
+    .art-title {
+      font-size: 1.8rem;
+      font-weight: 300;
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+      color: #ffddee;
+    }
+
+    .art-description {
+      font-size: 1.2rem;
+      font-weight: 300;
+      max-width: 320px;
+      line-height: 1.6;
+      margin: 0 auto 30px;
+      opacity: 0.9;
+    }
+
+    .next-btn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .next-btn span {
+      margin-bottom: 8px;
+    }
+
+    .next-icon {
+      width: 24px;
+      height: 24px;
+      border-left: 2px solid rgba(255, 255, 255, 0.7);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.7);
+      transform: rotate(-45deg);
+    }
+
+    /* 音乐画廊页 */
+    .gallery-page {
+      background: rgba(15, 8, 30, 0.7);
+    }
+
+    .song-title {
+      font-size: 1.5rem;
+      /* margin-bottom: 20px; */
+      margin-bottom: 40px;
+      color: #c5b3ff;
+      letter-spacing: 1px;
+    }
+
+    .lyrics-container {
+      /* height: 220px; */
+      height: 600px;
+      width: 300px;
+      overflow: hidden;
+      position: relative;
+      margin: 0 auto 25px;
+      /* padding: 15px; */
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+    }
+
+    .lyrics {
+      position: absolute;
+      top: 100%;
+      width: 100%;
+      text-align: center;
+      animation: scrollLyrics 180s linear infinite;
+    }
+
+    .lyrics p {
+      font-size: 1.2rem;
+      line-height: 2.2;
+      font-weight: 300;
+      margin: 5px 0;
+      opacity: 0.9;
+    }
+
+    .gallery {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+      width: 100%;
+      max-width: 350px;
+    }
+
+    .gallery-item {
+      /* width: 80px; */
+      /* height: 80px; */
+      height: 400px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      opacity: 0.8;
+      transition: all 0.3s ease;
+    }
+
+    .gallery-item:hover {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* 结束页 */
+    .ending-page {
+      background: rgba(5, 2, 15, 0.8);
+    }
+
+    .ending-text {
+      font-size: 1.6rem;
+      max-width: 320px;
+      line-height: 1.5;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .lights-out-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 1.1rem;
+      padding: 14px 40px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.5s ease;
+      backdrop-filter: blur(5px);
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+      margin-top: 40px;
+    }
+
+    .lights-out-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .lights-out-btn:hover::after {
+      opacity: 1;
+    }
+
+    /* 加载动画 */
+    .loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0a0a2a;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      transition: opacity 1s ease, visibility 1s ease;
+    }
+
+    .loader-text {
+      font-size: 1.2rem;
+      margin-top: 30px;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 2px;
+    }
+
+    .star-loader {
+      width: 80px;
+      height: 80px;
+      position: relative;
+    }
+
+    .star {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #fff, 0 0 20px #fff;
+      animation: twinkle 2s infinite ease-in-out;
+    }
+
+    .star:nth-child(1) {
+      top: 0;
+      left: 34px;
+      animation-delay: 0s;
+    }
+
+    .star:nth-child(2) {
+      top: 10px;
+      left: 10px;
+      animation-delay: 0.2s;
+    }
+
+    .star:nth-child(3) {
+      top: 34px;
+      left: 0;
+      animation-delay: 0.4s;
+    }
+
+    .star:nth-child(4) {
+      top: 68px;
+      left: 10px;
+      animation-delay: 0.6s;
+    }
+
+    .star:nth-child(5) {
+      top: 68px;
+      left: 58px;
+      animation-delay: 0.8s;
+    }
+
+    .star:nth-child(6) {
+      top: 34px;
+      left: 68px;
+      animation-delay: 1s;
+    }
+
+    .star:nth-child(7) {
+      top: 10px;
+      left: 58px;
+      animation-delay: 1.2s;
+    }
+
+    /* 结束信息样式 */
+    .end-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 1.2rem;
+      z-index: 10;
+      text-align: center;
+      line-height: 1.8;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    /* 动画效果 */
+    @keyframes twinkle {
+
+      0%,
+      100% {
+        opacity: 0.2;
+        transform: scale(0.8);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translate(-50%, 0);
+      }
+
+      50% {
+        transform: translate(-50%, -10px);
+      }
+    }
+
+    @keyframes scrollLyrics {
+      0% {
+        top: 100%;
+      }
+
+      100% {
+        top: -350%;
+      }
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 380px) {
+      .welcome-page h1 {
+        font-size: 2.2rem;
+      }
+
+      .art-container {
+        width: 240px;
+        height: 320px;
+      }
+
+      .lyrics-container {
+        width: 240px;
+        height: 180px;
+      }
+
+      .gallery-item {
+        width: 70px;
+        height: 70px;
+      }
+    }
+  </style>
+
+</head>
+
+
+<body>
+  <!-- 音乐加载状态弹窗 -->
+  <div id="music-loading-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;  justify-content: center; align-items: center; flex-direction: column;">
+    <div id="music-loading-text" style="color: white; font-size: 1.2rem; margin-bottom: 20px;">音乐加载中... 0%</div>
+    <div style="width: 80%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;">
+      <div id="music-loading-bar"
+        style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff7eb3, #ff758c); border-radius: 2px; transition: width 0.3s ease;">
+      </div>
+    </div>
+  </div>
+
+  <!-- 音乐加载完成提示 -->
+  <div id="music-ready-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;  justify-content: center; align-items: center; flex-direction: column;">
+    <div style="color: white; font-size: 1.2rem; margin-bottom: 20px; text-align: center;">音乐已加载完毕<br>可以开始沉浸体验了</div>
+    <button id="confirm-music-ready"
+      style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 30px; border-radius: 50px; font-size: 1rem; cursor: pointer;">开始体验</button>
+  </div>
+  <!-- 加载动画 -->
+  <div class="loader">
+    <div class="star-loader">
+      <div class="star"></div>
+      <div class="star"></div>
+      <div class="star"></div>
+      <div class="star"></div>
+      <div class="star"></div>
+      <div class="star"></div>
+      <div class="star"></div>
+    </div>
+    <div class="loader-text">点亮星空...</div>
+  </div>
+
+  <!-- 星空画布 -->
+  <canvas id="stars-canvas"></canvas>
+
+  <div class="page-container">
+    <!-- 首页 -->
+    <div class="page welcome-page active">
+      <h1 class="typing-text" id="typing-text"></h1>
+      <button class="music-btn" id="music-btn">开启氛围</button>
+
+    </div>
+
+    <!-- 画作展示页 -->
+    <div class="page art-page">
+      <h2 class="art-title">夜玫瑰</h2>
+      <div class="art-container">
+        <!-- src="https://images.unsplash.com/photo-1582058091505-6b8c3a6c9be0?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400" -->
+        <img src="rose.jpg" alt="夜玫瑰" class="art-image" id="art-image">
+      </div>
+      <p class="art-description">像是夜晚里一朵静静开的玫瑰，没有声音，但会发光。</p>
+      <div class="next-btn">
+        <span>滑动查看更多</span>
+        <div class="next-icon"></div>
+      </div>
+    </div>
+
+    <!-- 音乐画廊页 -->
+    <div class="page gallery-page">
+      <h3 class="song-title">活着 · 阿梨粤</h3>
+      <div class="lyrics-container">
+        <div class="lyrics">
+          <p>年轻得碰着谁亦能像威化般干脆</p>
+          <p>快活到半日也像活尽一百万岁</p>
+          <p>~</p>
+          <p>~</p>
+          <p>~</p>
+          <p>在流动在流动</p>
+          <p>就如咖啡因作动</p>
+          <p>睡了但眼部忘了合拢</p>
+          <p>就如石头悬浮在半空已失重</p>
+          <p>就是这样快乐谁不信</p>
+          <p>觉得激动便流泪</p>
+          <p>碰上了花蜜便陶醉</p>
+          <p>活着是为了像蝴蝶来又去</p>
+          <p>害怕孤独便团聚</p>
+          <p>怕过于迫夹便离去</p>
+          <p>活着未为我为谁</p>
+          <p>年轻得碰着谁亦能像威化般干脆</p>
+          <p>快活到半日也像活尽一百万岁</p>
+          <p>任何事亦能像青春般清脆</p>
+          <p>快活到每日大一岁</p>
+          <p>不了解不要解就连毛孔都扩大</p>
+          <p>就似汗腺横流过热带</p>
+          <p>就如被无限条乱发纠缠活埋</p>
+          <p>但是这是快乐谁不快</p>
+          <p>觉得激动便流泪</p>
+          <p>碰上了花蜜便陶醉</p>
+          <p>活着是为了像蝴蝶来又去</p>
+          <p>害怕孤独便团聚</p>
+          <p>怕过于迫夹便离去</p>
+          <p>活着未为我为谁</p>
+          <p>年轻得碰着谁亦能像威化般干脆</p>
+          <p>快活到半日也像活尽一百万岁</p>
+          <p>任何事亦难像青春般清脆</p>
+          <p>快活到每日大一岁</p>
+          <p>年轻得碰着谁亦能像威化般干脆</p>
+          <p>快活到半日也像活尽一百万岁</p>
+          <p>任何事亦能像青春般清脆</p>
+          <p>快活到每日大一岁</p>
+          <p>年轻得碰着谁亦能像威化般干脆</p>
+          <p>快活到半日也像活尽一百万岁</p>
+          <p>任何事亦能像青春般清脆</p>
+          <p>快活到每日大一岁</p>
+
+        </div>
+      </div>
+      <!-- <div class="gallery">
+        <div class="gallery-item">
+          <img src="romantic.jpg" alt="浪漫插画1">
+        </div>
+      </div> -->
+      <div class="next-btn">
+        <span>滑动查看更多</span>
+        <div class="next-icon"></div>
+      </div>
+    </div>
+
+    <!-- 结束页 -->
+    <div class="page ending-page">
+      <p class="ending-text">“灯火阑珊处，有你就不孤独”</p>
+      <p class="ending-text">“像寂寞烟火，点亮我夜空”</p>
+      <div class="gallery">
+        <div class="gallery-item">
+          <img src="romantic.jpg" alt="浪漫插画1">
+        </div>
+      </div>
+      <button class="lights-out-btn" id="lights-out-btn">点一下就关灯</button>
+    </div>
+  </div>
+
+  <!-- 音频元素 -->
+  <audio id="background-music" loop>
+    <source src="alive.mp3" type="audio/mpeg">
+    <!-- <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"> -->
+  </audio>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // 模拟加载
+      setTimeout(() => {
+        document.querySelector('.loader').style.opacity = '0';
+        document.querySelector('.loader').style.visibility = 'hidden';
+      }, 500);
+
+      // 星空背景 
+      const canvas = document.getElementById('stars-canvas');
+      const ctx = canvas.getContext('2d');
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // 创建星星
+      class Star {
+        constructor() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speed = Math.random() * 0.05 + 0.01;
+          this.alpha = Math.random();
+          this.color = `rgba(255, 255, 255, ${this.alpha})`;
+          this.twinkleSpeed = Math.random() * 0.05 + 0.01;
+          this.twinkleDirection = 1;
+        }
+
+        update() {
+          this.y += this.speed;
+          if (this.y > height) {
+            this.y = 0;
+            this.x = Math.random() * width;
+          }
+
+          // 闪烁效果
+          this.alpha += this.twinkleSpeed * this.twinkleDirection;
+          if (this.alpha >= 1) this.twinkleDirection = -1;
+          if (this.alpha <= 0.2) this.twinkleDirection = 1;
+          this.color = `rgba(255, 255, 255, ${this.alpha})`;
+        }
+
+        draw() {
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 创建星星数组
+      const stars = [];
+      const starsCount = 150;
+
+      for (let i = 0; i < starsCount; i++) {
+        stars.push(new Star());
+      }
+
+      // 动画循环
+      function animateStars() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 添加渐变背景
+        const gradient = ctx.createRadialGradient(
+          width / 2, height / 2, 0,
+          width / 2, height / 2, Math.max(width, height) / 2
+        );
+        gradient.addColorStop(0, 'rgba(26, 6, 57, 0.6)');
+        gradient.addColorStop(1, 'rgba(10, 10, 42, 0.2)');
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // 更新和绘制星星
+        stars.forEach(star => {
+          star.update();
+          star.draw();
+        });
+
+        requestAnimationFrame(animateStars);
+      }
+
+      animateStars();
+
+      // 窗口大小调整
+      window.addEventListener('resize', function () {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      });
+
+      // 打字机效果
+      const typingText = document.getElementById('typing-text');
+      const text = '有时候，音乐+灯光+一幅画，就是一个夜晚的全部。';
+      // const text = '那晚听歌的时候，脑海里飘过你那幅玫瑰，于是就有了这个小网页。';
+      let charIndex = 0;
+
+      function typeWriter() {
+        if (charIndex < text.length) {
+          typingText.innerHTML += text.charAt(charIndex);
+          charIndex++;
+          setTimeout(typeWriter, 150);
+        }
+      }
+
+      // 页面切换
+      const pages = document.querySelectorAll('.page');
+      let currentPage = 0;
+
+      function showPage(index) {
+        pages.forEach((page, i) => {
+          if (i === index) {
+            page.classList.add('active');
+          } else {
+            page.classList.remove('active');
+          }
+        });
+      }
+
+      // 滑动切换页面
+      let startY = 0;
+      let isScrolling = false;
+
+      document.addEventListener('touchstart', function (e) {
+        startY = e.touches[0].clientY;
+        isScrolling = false;
+      });
+
+      document.addEventListener('touchmove', function (e) {
+        const moveY = e.touches[0].clientY;
+        const diffY = startY - moveY;
+
+        if (Math.abs(diffY) > 10 && !isScrolling) {
+          isScrolling = true;
+
+          if (diffY > 0 && currentPage < pages.length - 1) {
+            // 向上滑动
+            currentPage++;
+            showPage(currentPage);
+          } else if (diffY < 0 && currentPage > 0) {
+            // 向下滑动
+            currentPage--;
+            showPage(currentPage);
+          }
+        }
+      });
+
+      // 音乐控制
+      // const musicBtn = document.getElementById('music-btn');
+      // const backgroundMusic = document.getElementById('background-music');
+      // let isPlaying = false;
+
+      // musicBtn.addEventListener('click', function () {
+      //   if (!isPlaying) {
+      //     backgroundMusic.play();
+      //     musicBtn.textContent = '沉浸中...';
+      //     isPlaying = true;
+
+      //     // 添加播放状态样式
+      //     musicBtn.style.background = 'rgba(255, 255, 255, 0.15)';
+      //     musicBtn.style.boxShadow = '0 0 20px rgba(255, 215, 255, 0.4)';
+      //   }
+      //   currentPage++
+      //   showPage(currentPage);
+      // });
+      // 音乐控制
+      const musicBtn = document.getElementById('music-btn');
+      const backgroundMusic = document.getElementById('background-music');
+      const musicLoadingModal = document.getElementById('music-loading-modal');
+      const musicReadyModal = document.getElementById('music-ready-modal');
+      const musicLoadingText = document.getElementById('music-loading-text');
+      const musicLoadingBar = document.getElementById('music-loading-bar');
+      const confirmMusicReadyBtn = document.getElementById('confirm-music-ready');
+      let isPlaying = false;
+      let isMusicLoaded = false;
+      let isClick = false
+      // 检查音乐加载状态
+      backgroundMusic.addEventListener('progress', function () {
+
+        if (backgroundMusic.buffered.length > 0) {
+          const loadedPercentage = (backgroundMusic.buffered.end(0) / backgroundMusic.duration) * 100;
+          musicLoadingText.textContent = `音乐加载中... ${Math.round(loadedPercentage)}%`;
+          musicLoadingBar.style.width = `${loadedPercentage}%`;
+        }
+
+
+      });
+
+      backgroundMusic.addEventListener('canplaythrough', function () {
+
+        isMusicLoaded = true;
+        musicLoadingModal.style.display = 'none';
+        if (isClick) musicReadyModal.style.display = 'flex';
+
+
+      });
+
+      confirmMusicReadyBtn.addEventListener('click', function () {
+        musicReadyModal.style.display = 'none';
+        startMusicPlayback();
+      });
+
+      musicBtn.addEventListener('click', function () {
+
+        if (!isPlaying) {
+          if (isMusicLoaded) {
+            startMusicPlayback();
+          } else {
+            isClick = true
+            musicLoadingModal.style.display = 'flex';
+            // 尝试预加载音乐
+            backgroundMusic.load();
+          }
+        }
+      });
+
+      function startMusicPlayback() {
+        backgroundMusic.play()
+          .then(() => {
+            musicBtn.textContent = '沉浸中...';
+            isPlaying = true;
+            musicBtn.style.background = 'rgba(255, 255, 255, 0.15)';
+            musicBtn.style.boxShadow = '0 0 20px rgba(255, 215, 255, 0.4)';
+          })
+          .catch(error => {
+            console.error('播放失败:', error);
+            musicBtn.textContent = '播放失败，点击重试';
+          });
+      }
+
+      // 关灯效果
+      const lightsOutBtn = document.getElementById('lights-out-btn');
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = '#000';
+      overlay.style.opacity = '0';
+      overlay.style.zIndex = '5';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.transition = 'opacity 5s ease';
+      document.body.appendChild(overlay);
+
+      let click_lightsOutBtn = false
+      lightsOutBtn.addEventListener('click', function () {
+        if (click_lightsOutBtn == true) return
+        click_lightsOutBtn = true
+        // 淡出音乐
+        fadeOutMusic();
+
+        // 渐暗效果
+        overlay.style.opacity = '1';
+
+        // 隐藏所有元素
+        setTimeout(() => {
+          document.querySelector('.page-container').style.opacity = '0';
+        }, 3000);
+
+        // 显示结束信息
+        setTimeout(() => {
+          const endMessage = document.createElement('div');
+          // endMessage.style.position = 'fixed';
+          // endMessage.style.top = '50%';
+          // endMessage.style.left = '50%';
+          // endMessage.style.transform = 'translate(-50%, -50%)';
+          // endMessage.style.color = 'rgba(255, 255, 255, 0.3)';
+          // endMessage.style.fontSize = '1.2rem';
+          // endMessage.style.zIndex = '10';
+          // endMessage.style.textAlign = 'center';
+          // endMessage.innerHTML = '只是一个灵感，不小心想起你。/n 晚安。';
+          // document.body.appendChild(endMessage);
+          endMessage.className = 'end-message';
+          document.body.appendChild(endMessage);
+
+          // 打字机效果显示结束语
+          const messageText = '只是一个灵感，不小心想起你。* * 晚安。';
+          let msgIndex = 0;
+
+          function typeEndMessage() {
+            if (msgIndex < messageText.length) {
+              endMessage.innerHTML += messageText.charAt(msgIndex);
+              msgIndex++;
+              setTimeout(typeEndMessage, 80);
+            }
+          }
+          typeEndMessage();
+        }, 4500);
+      });
+
+      function fadeOutMusic() {
+        let volume = 1;
+        const fadeInterval = setInterval(() => {
+          if (volume > 0) {
+            volume -= 0.05;
+            backgroundMusic.volume = volume > 0 ? volume : 0;
+          } else {
+            clearInterval(fadeInterval);
+            backgroundMusic.pause();
+          }
+        }, 200);
+      }
+
+      // 页面加载后开始动画
+      setTimeout(() => {
+        typeWriter();
+      }, 500);
+
+      // 添加画作悬停效果
+      const artImage = document.getElementById('art-image');
+      artImage.addEventListener('mouseover', () => {
+        artImage.style.transform = 'scale(1.03)';
+        artImage.style.filter = 'brightness(1.05) contrast(1.15) saturate(1.3)';
+      });
+
+      artImage.addEventListener('mouseout', () => {
+        artImage.style.transform = 'scale(1)';
+        artImage.style.filter = 'brightness(0.9) contrast(1.1) saturate(1.2)';
+      });
+    });
+  </script>
+</body>
+
+</html>

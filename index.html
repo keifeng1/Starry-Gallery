@@ -830,6 +830,8 @@
             isPlaying = true;
             musicBtn.style.background = 'rgba(255, 255, 255, 0.15)';
             musicBtn.style.boxShadow = '0 0 20px rgba(255, 215, 255, 0.4)';
+            currentPage++
+            showPage(currentPage);
           })
           .catch(error => {
             console.error('播放失败:', error);
